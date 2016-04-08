@@ -13,6 +13,8 @@ Inspired by [mako templates](http://www.makotemplates.org/) philosophy.
 
   * [Extremely fast](#performance-comparison-with-htmltemplate).
     Templates are converted into Go code and then compiled.
+  * Almost all the bugs are caught during template compilation, so production
+    suffers less from template-related bugs.
   * Easy to use. See [quickstart](#quick-start) and [examples](https://github.com/valyala/quicktemplate/tree/master/examples)
     for details.
   * Powerful. Arbitrary Go code may be embedded into and mixed with templates.
