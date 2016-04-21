@@ -60,7 +60,7 @@ func (p *parser) parseTemplate() error {
 			} else {
 				p.emitImportsUse()
 				switch string(t.Value) {
-				case "interface":
+				case "interface", "iface":
 					if err := p.parseInterface(); err != nil {
 						return err
 					}
@@ -224,6 +224,139 @@ func (p *parser) parseFor() error {
 	return fmt.Errorf("cannot find endfor tag for %q at %s", forStr, s.Context())
 }
 
+func (p *parser) parseDefault() error {
+	s := p.s
+	if err := skipTagContents(s); err != nil {
+		return err
+	}
+	stmtStr := "default"
+	p.Printf("default:")
+	p.prefix += "\t"
+	for s.Next() {
+		t := s.Token()
+		switch t.ID {
+		case text:
+			p.emitText(t.Value)
+		case tagName:
+			ok, err := p.tryParseCommonTags(t.Value)
+			if err != nil {
+				return fmt.Errorf("error in %q: %s", stmtStr, err)
+			}
+			if !ok {
+				s.Rewind()
+				p.prefix = p.prefix[1:]
+				return nil
+			}
+		default:
+			return fmt.Errorf("unexpected token found when parsing %q: %s at %s", stmtStr, t, s.Context())
+		}
+	}
+	if err := s.LastError(); err != nil {
+		return fmt.Errorf("cannot parse %q: %s", stmtStr, err)
+	}
+	return fmt.Errorf("cannot find end of %q at %s", stmtStr, s.Context())
+}
+
+func (p *parser) parseCase() error {
+	s := p.s
+	t, err := expectTagContents(s)
+	if err != nil {
+		return err
+	}
+	caseStr := "case " + string(t.Value)
+	if err = validateCaseStmt(t.Value); err != nil {
+		return fmt.Errorf("invalid statement %q at %s: %s", caseStr, s.Context(), err)
+	}
+	p.Printf("case %s:", t.Value)
+	p.prefix += "\t"
+	for s.Next() {
+		t := s.Token()
+		switch t.ID {
+		case text:
+			p.emitText(t.Value)
+		case tagName:
+			ok, err := p.tryParseCommonTags(t.Value)
+			if err != nil {
+				return fmt.Errorf("error in %q: %s", caseStr, err)
+			}
+			if !ok {
+				s.Rewind()
+				p.prefix = p.prefix[1:]
+				return nil
+			}
+		default:
+			return fmt.Errorf("unexpected token found when parsing %q: %s at %s", caseStr, t, s.Context())
+		}
+	}
+	if err := s.LastError(); err != nil {
+		return fmt.Errorf("cannot parse %q: %s", caseStr, err)
+	}
+	return fmt.Errorf("cannot find end of %q at %s", caseStr, s.Context())
+}
+
+func (p *parser) parseSwitch() error {
+	s := p.s
+	t, err := expectTagContents(s)
+	if err != nil {
+		return err
+	}
+	switchStr := "switch " + string(t.Value)
+	if err = validateSwitchStmt(t.Value); err != nil {
+		return fmt.Errorf("invalid statement %q at %s: %s", switchStr, s.Context(), err)
+	}
+	p.Printf("switch %s {", t.Value)
+	caseNum := 0
+	defaultFound := false
+	for s.Next() {
+		t := s.Token()
+		switch t.ID {
+		case text:
+			if caseNum == 0 {
+				comment := stripLeadingSpace(t.Value)
+				if len(comment) > 0 {
+					p.emitComment(comment)
+				}
+			} else {
+				p.emitText(t.Value)
+			}
+		case tagName:
+			switch string(t.Value) {
+			case "endswitch":
+				if caseNum == 0 {
+					return fmt.Errorf("empty statement %q found at %s", switchStr, s.Context())
+				}
+				if err = skipTagContents(s); err != nil {
+					return err
+				}
+				p.Printf("}")
+				return nil
+			case "case":
+				caseNum++
+				if err = p.parseCase(); err != nil {
+					return err
+				}
+			case "default":
+				if defaultFound {
+					return fmt.Errorf("duplicate default tag found in %q at %s", switchStr, s.Context())
+				}
+				defaultFound = true
+				caseNum++
+				if err = p.parseDefault(); err != nil {
+					return err
+				}
+			default:
+				return fmt.Errorf("unexpected tag found in %q: %q at %s", switchStr, t.Value, s.Context())
+			}
+		default:
+			return fmt.Errorf("unexpected token found when parsing %q: %s at %s", switchStr, t, s.Context())
+		}
+	}
+	if err := s.LastError(); err != nil {
+		return fmt.Errorf("cannot parse %q: %s", switchStr, err)
+	}
+	return fmt.Errorf("cannot find endswitch tag for %q at %s", switchStr, s.Context())
+}
+
 func (p *parser) parseIf() error {
 	s := p.s
 	t, err := expectTagContents(s)
@@ -361,6 +494,10 @@ func (p *parser) tryParseCommonTags(tagBytes []byte) (bool, error) {
 		if err := p.parseIf(); err != nil {
 			return false, err
 		}
+	case "switch":
+		if err := p.parseSwitch(); err != nil {
+			return false, err
+		}
 	default:
 		return false, nil
 	}
@@ -391,7 +528,7 @@ func (p *parser) skipAfterTag(tagStr string) error {
 				continue
 			}
 			switch string(t.Value) {
-			case "endfunc", "endfor", "endif", "else", "elseif":
+			case "endfunc", "endfor", "endif", "else", "elseif", "case", "default", "endswitch":
 				s.Rewind()
 				return nil
 			default:
@@ -581,6 +718,18 @@ func validateForStmt(stmt []byte) error {
 
 func validateIfStmt(stmt []byte) error {
 	exprStr := fmt.Sprintf("func () { if %s {} }", stmt)
+	_, err := goparser.ParseExpr(exprStr)
+	return err
+}
+
+func validateSwitchStmt(stmt []byte) error {
+	exprStr := fmt.Sprintf("func () { switch %s {} }", stmt)
+	_, err := goparser.ParseExpr(exprStr)
+	return err
+}
+
+func validateCaseStmt(stmt []byte) error {
+	exprStr := fmt.Sprintf("func () { switch {case %s:} }", stmt)
 	_, err := goparser.ParseExpr(exprStr)
 	return err
 }

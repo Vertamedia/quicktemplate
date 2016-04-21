@@ -79,7 +79,16 @@ It should contains all the quicktemplate stuff.
 				{% if s == "never" %}
 					{% return %}
 				{% endif %}
-				s = {%s s %}
+
+				{% switch s %}
+				{% case "foobar" %}
+					s = foobar
+				{% case "barbaz" %}
+					s = barbaz
+				{% default %}
+					s = {%s s %}
+				{% endswitch %}
+
 				{% continue %}
 			{% endif %}
 		{% endfor %}

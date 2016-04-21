@@ -236,249 +236,272 @@ func streamprintArgs(qw422016 *qt422016.Writer, i int, a *FooArgs) {
 	//line testdata/test.qtpl:77
 	qw422016.N().S(`">test</a>
 	</li>
+
+	Switch statement:
+	`)
+	//line testdata/test.qtpl:81
+	qw422016.N().S(`a.S =`)
+	//line testdata/test.qtpl:83
+	switch a.S {
+	//line testdata/test.qtpl:84
+	case "foo":
+		//line testdata/test.qtpl:84
+		qw422016.N().S(`foo`)
+	//line testdata/test.qtpl:86
+	case "bar":
+		//line testdata/test.qtpl:86
+		qw422016.N().S(`bar`)
+	//line testdata/test.qtpl:88
+	default:
+		//line testdata/test.qtpl:89
+		qw422016.E().Q(a.S)
+		//line testdata/test.qtpl:90
+	}
+	//line testdata/test.qtpl:91
+	qw422016.N().S(`
 `)
-//line testdata/test.qtpl:79
+//line testdata/test.qtpl:92
 }
 
-//line testdata/test.qtpl:79
+//line testdata/test.qtpl:92
 func writeprintArgs(qq422016 qtio422016.Writer, i int, a *FooArgs) {
-	//line testdata/test.qtpl:79
+	//line testdata/test.qtpl:92
 	qw422016 := qt422016.AcquireWriter(qq422016)
-	//line testdata/test.qtpl:79
+	//line testdata/test.qtpl:92
 	streamprintArgs(qw422016, i, a)
-	//line testdata/test.qtpl:79
+	//line testdata/test.qtpl:92
 	qt422016.ReleaseWriter(qw422016)
-//line testdata/test.qtpl:79
+//line testdata/test.qtpl:92
 }
 
-//line testdata/test.qtpl:79
+//line testdata/test.qtpl:92
 func printArgs(i int, a *FooArgs) string {
-	//line testdata/test.qtpl:79
+	//line testdata/test.qtpl:92
 	qb422016 := qt422016.AcquireByteBuffer()
-	//line testdata/test.qtpl:79
+	//line testdata/test.qtpl:92
 	writeprintArgs(qb422016, i, a)
-	//line testdata/test.qtpl:79
+	//line testdata/test.qtpl:92
 	qs422016 := string(qb422016.B)
-	//line testdata/test.qtpl:79
+	//line testdata/test.qtpl:92
 	qt422016.ReleaseByteBuffer(qb422016)
-	//line testdata/test.qtpl:79
+	//line testdata/test.qtpl:92
 	return qs422016
-//line testdata/test.qtpl:79
+//line testdata/test.qtpl:92
 }
 
 // Now create page template interface.
 
-//line testdata/test.qtpl:83
+//line testdata/test.qtpl:96
 type Page interface {
-	//line testdata/test.qtpl:83
+	//line testdata/test.qtpl:96
 	Head() string
-	//line testdata/test.qtpl:83
+	//line testdata/test.qtpl:96
 	StreamHead(qw422016 *qt422016.Writer)
-	//line testdata/test.qtpl:83
+	//line testdata/test.qtpl:96
 	WriteHead(qq422016 qtio422016.Writer)
-	//line testdata/test.qtpl:83
+	//line testdata/test.qtpl:96
 	Body(title string) string
-	//line testdata/test.qtpl:83
+	//line testdata/test.qtpl:96
 	StreamBody(qw422016 *qt422016.Writer, title string)
-	//line testdata/test.qtpl:83
+	//line testdata/test.qtpl:96
 	WriteBody(qq422016 qtio422016.Writer, title string)
-//line testdata/test.qtpl:83
+//line testdata/test.qtpl:96
 }
 
 // This function prints arbitrary page.
 
-//line testdata/test.qtpl:93
+//line testdata/test.qtpl:106
 func StreamPrintPage(qw422016 *qt422016.Writer, p Page, title string) {
-	//line testdata/test.qtpl:93
+	//line testdata/test.qtpl:106
 	qw422016.N().S(`
 	<html>
 		<head>`)
-	//line testdata/test.qtpl:95
+	//line testdata/test.qtpl:108
 	p.StreamHead(qw422016)
-	//line testdata/test.qtpl:95
+	//line testdata/test.qtpl:108
 	qw422016.N().S(`</head>
 		<body>`)
-	//line testdata/test.qtpl:96
+	//line testdata/test.qtpl:109
 	p.StreamBody(qw422016, title)
-	//line testdata/test.qtpl:96
+	//line testdata/test.qtpl:109
 	qw422016.N().S(`</body>
 	</html>
 `)
-//line testdata/test.qtpl:98
+//line testdata/test.qtpl:111
 }
 
-//line testdata/test.qtpl:98
+//line testdata/test.qtpl:111
 func WritePrintPage(qq422016 qtio422016.Writer, p Page, title string) {
-	//line testdata/test.qtpl:98
+	//line testdata/test.qtpl:111
 	qw422016 := qt422016.AcquireWriter(qq422016)
-	//line testdata/test.qtpl:98
+	//line testdata/test.qtpl:111
 	StreamPrintPage(qw422016, p, title)
-	//line testdata/test.qtpl:98
+	//line testdata/test.qtpl:111
 	qt422016.ReleaseWriter(qw422016)
-//line testdata/test.qtpl:98
+//line testdata/test.qtpl:111
 }
 
-//line testdata/test.qtpl:98
+//line testdata/test.qtpl:111
 func PrintPage(p Page, title string) string {
-	//line testdata/test.qtpl:98
+	//line testdata/test.qtpl:111
 	qb422016 := qt422016.AcquireByteBuffer()
-	//line testdata/test.qtpl:98
+	//line testdata/test.qtpl:111
 	WritePrintPage(qb422016, p, title)
-	//line testdata/test.qtpl:98
+	//line testdata/test.qtpl:111
 	qs422016 := string(qb422016.B)
-	//line testdata/test.qtpl:98
+	//line testdata/test.qtpl:111
 	qt422016.ReleaseByteBuffer(qb422016)
-	//line testdata/test.qtpl:98
+	//line testdata/test.qtpl:111
 	return qs422016
-//line testdata/test.qtpl:98
+//line testdata/test.qtpl:111
 }
 
 // Implement contacts page
 
-//line testdata/test.qtpl:101
+//line testdata/test.qtpl:114
 type ContactsPage struct{}
 
-//line testdata/test.qtpl:102
+//line testdata/test.qtpl:115
 func (b *ContactsPage) StreamHead(qw422016 *qt422016.Writer) {
-	//line testdata/test.qtpl:102
+	//line testdata/test.qtpl:115
 	qw422016.N().S(`<title>Contacts!</title>`)
-//line testdata/test.qtpl:102
+//line testdata/test.qtpl:115
 }
 
-//line testdata/test.qtpl:102
+//line testdata/test.qtpl:115
 func (b *ContactsPage) WriteHead(qq422016 qtio422016.Writer) {
-	//line testdata/test.qtpl:102
+	//line testdata/test.qtpl:115
 	qw422016 := qt422016.AcquireWriter(qq422016)
-	//line testdata/test.qtpl:102
+	//line testdata/test.qtpl:115
 	b.StreamHead(qw422016)
-	//line testdata/test.qtpl:102
+	//line testdata/test.qtpl:115
 	qt422016.ReleaseWriter(qw422016)
-//line testdata/test.qtpl:102
+//line testdata/test.qtpl:115
 }
 
-//line testdata/test.qtpl:102
+//line testdata/test.qtpl:115
 func (b *ContactsPage) Head() string {
-	//line testdata/test.qtpl:102
+	//line testdata/test.qtpl:115
 	qb422016 := qt422016.AcquireByteBuffer()
-	//line testdata/test.qtpl:102
+	//line testdata/test.qtpl:115
 	b.WriteHead(qb422016)
-	//line testdata/test.qtpl:102
+	//line testdata/test.qtpl:115
 	qs422016 := string(qb422016.B)
-	//line testdata/test.qtpl:102
+	//line testdata/test.qtpl:115
 	qt422016.ReleaseByteBuffer(qb422016)
-	//line testdata/test.qtpl:102
+	//line testdata/test.qtpl:115
 	return qs422016
-//line testdata/test.qtpl:102
+//line testdata/test.qtpl:115
 }
 
-//line testdata/test.qtpl:103
+//line testdata/test.qtpl:116
 func (b *ContactsPage) StreamBody(qw422016 *qt422016.Writer, title string) {
-	//line testdata/test.qtpl:103
+	//line testdata/test.qtpl:116
 	qw422016.N().S(`Put here contact info`)
-//line testdata/test.qtpl:103
+//line testdata/test.qtpl:116
 }
 
-//line testdata/test.qtpl:103
+//line testdata/test.qtpl:116
 func (b *ContactsPage) WriteBody(qq422016 qtio422016.Writer, title string) {
-	//line testdata/test.qtpl:103
+	//line testdata/test.qtpl:116
 	qw422016 := qt422016.AcquireWriter(qq422016)
-	//line testdata/test.qtpl:103
+	//line testdata/test.qtpl:116
 	b.StreamBody(qw422016, title)
-	//line testdata/test.qtpl:103
+	//line testdata/test.qtpl:116
 	qt422016.ReleaseWriter(qw422016)
-//line testdata/test.qtpl:103
+//line testdata/test.qtpl:116
 }
 
-//line testdata/test.qtpl:103
+//line testdata/test.qtpl:116
 func (b *ContactsPage) Body(title string) string {
-	//line testdata/test.qtpl:103
+	//line testdata/test.qtpl:116
 	qb422016 := qt422016.AcquireByteBuffer()
-	//line testdata/test.qtpl:103
+	//line testdata/test.qtpl:116
 	b.WriteBody(qb422016, title)
-	//line testdata/test.qtpl:103
+	//line testdata/test.qtpl:116
 	qs422016 := string(qb422016.B)
-	//line testdata/test.qtpl:103
+	//line testdata/test.qtpl:116
 	qt422016.ReleaseByteBuffer(qb422016)
-	//line testdata/test.qtpl:103
+	//line testdata/test.qtpl:116
 	return qs422016
-//line testdata/test.qtpl:103
+//line testdata/test.qtpl:116
 }
 
 // Implement HomePage
 
-//line testdata/test.qtpl:106
+//line testdata/test.qtpl:119
 type Homepage struct{}
 
-//line testdata/test.qtpl:107
+//line testdata/test.qtpl:120
 func (h *Homepage) StreamHead(qw422016 *qt422016.Writer) {
-//line testdata/test.qtpl:107
+//line testdata/test.qtpl:120
 qw422016.N().S(`<title>Homepage</title>`) }
 
-//line testdata/test.qtpl:107
-//line testdata/test.qtpl:107
+//line testdata/test.qtpl:120
+//line testdata/test.qtpl:120
 func (h *Homepage) WriteHead(qq422016 qtio422016.Writer) {
-	//line testdata/test.qtpl:107
+	//line testdata/test.qtpl:120
 	qw422016 := qt422016.AcquireWriter(qq422016)
-	//line testdata/test.qtpl:107
+	//line testdata/test.qtpl:120
 	h.StreamHead(qw422016)
-	//line testdata/test.qtpl:107
+	//line testdata/test.qtpl:120
 	qt422016.ReleaseWriter(qw422016)
-//line testdata/test.qtpl:107
+//line testdata/test.qtpl:120
 }
 
-//line testdata/test.qtpl:107
+//line testdata/test.qtpl:120
 func (h *Homepage) Head() string {
-	//line testdata/test.qtpl:107
+	//line testdata/test.qtpl:120
 	qb422016 := qt422016.AcquireByteBuffer()
-	//line testdata/test.qtpl:107
+	//line testdata/test.qtpl:120
 	h.WriteHead(qb422016)
-	//line testdata/test.qtpl:107
+	//line testdata/test.qtpl:120
 	qs422016 := string(qb422016.B)
-	//line testdata/test.qtpl:107
+	//line testdata/test.qtpl:120
 	qt422016.ReleaseByteBuffer(qb422016)
-	//line testdata/test.qtpl:107
+	//line testdata/test.qtpl:120
 	return qs422016
-//line testdata/test.qtpl:107
+//line testdata/test.qtpl:120
 }
 
-//line testdata/test.qtpl:108
+//line testdata/test.qtpl:121
 func (h *Homepage) StreamBody(qw422016 *qt422016.Writer, title string) {
-	//line testdata/test.qtpl:108
+	//line testdata/test.qtpl:121
 	qw422016.N().S(`
 	Title: `)
-	//line testdata/test.qtpl:109
+	//line testdata/test.qtpl:122
 	qw422016.N().S(title)
-	//line testdata/test.qtpl:109
+	//line testdata/test.qtpl:122
 	qw422016.N().S(`
 	Homepage body
 `)
-//line testdata/test.qtpl:111
+//line testdata/test.qtpl:124
 }
 
-//line testdata/test.qtpl:111
+//line testdata/test.qtpl:124
 func (h *Homepage) WriteBody(qq422016 qtio422016.Writer, title string) {
-	//line testdata/test.qtpl:111
+	//line testdata/test.qtpl:124
 	qw422016 := qt422016.AcquireWriter(qq422016)
-	//line testdata/test.qtpl:111
+	//line testdata/test.qtpl:124
 	h.StreamBody(qw422016, title)
-	//line testdata/test.qtpl:111
+	//line testdata/test.qtpl:124
 	qt422016.ReleaseWriter(qw422016)
-//line testdata/test.qtpl:111
+//line testdata/test.qtpl:124
 }
 
-//line testdata/test.qtpl:111
+//line testdata/test.qtpl:124
 func (h *Homepage) Body(title string) string {
-	//line testdata/test.qtpl:111
+	//line testdata/test.qtpl:124
 	qb422016 := qt422016.AcquireByteBuffer()
-	//line testdata/test.qtpl:111
+	//line testdata/test.qtpl:124
 	h.WriteBody(qb422016, title)
-	//line testdata/test.qtpl:111
+	//line testdata/test.qtpl:124
 	qs422016 := string(qb422016.B)
-	//line testdata/test.qtpl:111
+	//line testdata/test.qtpl:124
 	qt422016.ReleaseByteBuffer(qb422016)
-	//line testdata/test.qtpl:111
+	//line testdata/test.qtpl:124
 	return qs422016
-//line testdata/test.qtpl:111
+//line testdata/test.qtpl:124
 }
 
 // unused code may be commented:

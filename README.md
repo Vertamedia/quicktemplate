@@ -44,7 +44,7 @@ The following simple template is used in the benchmark:
 Benchmark results:
 
 ```
-$ go test -bench=Template -benchmem
+$ go test -bench=Template -benchmem ./tests
 BenchmarkQuickTemplate1-4  	10000000	       158 ns/op	       0 B/op	       0 allocs/op
 BenchmarkQuickTemplate10-4 	 2000000	       604 ns/op	       0 B/op	       0 allocs/op
 BenchmarkQuickTemplate100-4	  300000	      5498 ns/op	       0 B/op	       0 allocs/op
@@ -52,6 +52,8 @@ BenchmarkHTMLTemplate1-4   	  500000	      2807 ns/op	     752 B/op	      23 all
 BenchmarkHTMLTemplate10-4  	  100000	     13527 ns/op	    3521 B/op	     117 allocs/op
 BenchmarkHTMLTemplate100-4 	   10000	    133503 ns/op	   34499 B/op	    1152 allocs/op
 ```
+
+[goTemplateBenchmark](https://github.com/SlinSo/goTemplateBenchmark) compares QuickTemplate with numerous go templating packages. QuickTemplate performs favorably.
 
 # Security
 
@@ -280,6 +282,21 @@ There are other useful tags supported by quicktemplate:
     or is used</div></div>
     ```
 
+  * `{% switch %}`, `{% case %}` and `{% default %}`:
+
+
+    ```qtpl
+    1 + 1 =
+    {% switch 1+1 %}
+    {% case 2 %}
+	2?
+    {% case 42 %}
+	42!
+    {% default %}
+        I don't know :(
+    {% endswitch %}
+    ```
+
   * `{% code %}`:
 
     ```qtpl
@@ -365,6 +382,67 @@ There are other useful tags supported by quicktemplate:
     See [basicserver example](https://github.com/valyala/quicktemplate/tree/master/examples/basicserver)
     for more details.
 
+
+# Performance optimization tips
+
+  * Prefer calling `WriteFoo` instead of `Foo` when generating template output
+    for `{% func Foo() %}`. This avoids unnesessary memory allocation and a copy
+    for a `string` returned from `Foo()`.
+
+  * Prefer `{%= Foo() %}` instead of `{%s= Foo() %}` when embedding
+    a function template `{% func Foo() %}`. Though both approaches generate
+    identical output, the first approach is optimized for speed.
+
+  * Prefer using existing output tags instead of passing `fmt.Sprintf`
+    to `{%s %}` output tag. For instance, use `{%d num %}` instead
+    of `{%s fmt.Sprintf("%d", num) %}`, because the first approach is optimized
+    for speed.
+
+  * Prefer creating custom function templates instead of composing complex
+    strings by hands before passing them to `{%s %}`.
+    For instance, the first approach is slower than the second one:
+
+    ```qtpl
+    {% func Foo(n int) %}
+        {% code
+        // construct complex string
+        complexStr := ""
+        for i := 0; i < n; i++ {
+            complexStr += fmt.Sprintf("num %d,", i)
+        }
+        %}
+        complex string = {%s= complexStr %}
+    {% endfunc %}
+    ```
+
+    ```qtpl
+    {% func Foo(n int) %}
+        complex string = {%= complexStr(n) %}
+    {% endfunc %}
+
+    // Wrap complexStr func into stripspace for stripping unnesessary space
+    // between tags and lines.
+    {% stripspace %}
+    {% func complexStr(n int) %}
+        {% for i := 0; i < n; i++ %}
+            num {%d i %}{% newline %}
+        {% endfor %}
+    {% endfunc %}
+    {% endstripspace %}
+    ```
+
+  * Make sure that the `io.Writer` passed to `Write*` functions
+    is [buffered](https://golang.org/pkg/bufio/#Writer).
+    This will minimize the number of `write`
+    [syscalls](https://en.wikipedia.org/wiki/System_call),
+    which may be quite expensive.
+
+    Note: There is no need in wrapping [fasthttp.RequestCtx](https://godoc.org/github.com/valyala/fasthttp#RequestCtx)
+    into [bufio.Writer](https://golang.org/pkg/bufio/#Writer), since it is already buffered.
+
+  * [Profile](http://blog.golang.org/profiling-go-programs) your programs
+    for memory allocations and fix top functions from
+    `go tool pprof --alloc_objects` output.
 
 # FAQ
 

@@ -10,6 +10,67 @@ import (
 	"github.com/valyala/quicktemplate"
 )
 
+func TestParseSwitchCaseSuccess(t *testing.T) {
+	// single-case switch
+	testParseSuccess(t, "{%func a()%}{%switch n%}{%case 1%}aaa{%endswitch%}{%endfunc%}")
+
+	// multi-case switch
+	testParseSuccess(t, "{%func a()%}{%switch%}\n\t  {%case foo()%}\nfoobar{%case bar()%}{%endswitch%}{%endfunc%}")
+
+	// default statement
+	testParseSuccess(t, "{%func a()%}{%switch%}{%default%}{%endswitch%}{%endfunc%}")
+
+	// complex switch
+	testParseSuccess(t, `{%func f()%}{% for %}
+		{%switch foo() %}
+		The text before the first case
+		is converted into comment
+		{%case "foobar" %}
+			{% switch %}
+			{% case bar() %}
+				aaaa
+			{% case baz() %}
+				bbbb
+			{% endswitch %}
+		{% case "aaa" %}
+			{% for i := 0; i < 10; i++ %}
+				foobar
+			{% endfor %}
+		{% case "qwe" %}
+			aaaa
+			{% return %}
+		{% case "www" %}
+			break from the outer loop, not from the switch
+			{% break %}
+		{% default %}
+			foobar
+		{%endswitch%}
+	{% endfor %}{%endfunc%}`)
+}
+
+func TestParseSwitchCaseFailure(t *testing.T) {
+	// missing endswitch
+	testParseFailure(t, "{%func a()%}{%switch%}{%endfunc%}")
+
+	// empty switch
+	testParseFailure(t, "{%func f()%}{%switch%}{%endswitch%}{%endfunc%}")
+
+	// case outside switch
+	testParseFailure(t, "{%func f()%}{%case%}{%endfunc%}")
+
+	// the first tag inside switch is non-case
+	testParseFailure(t, "{%func f()%}{%switch%}{%return%}{%endswitch%}{%endfunc%}")
+
+	// break inside switch without outer loop
+	testParseFailure(t, "{%func f()%}{%switch%}{%case 1%}{%break%}{%endswitch%}{%endfunc%}")
+
+	// empty case
+	testParseFailure(t, "{%func f()%}{%switch%}{%case%}aaa{%endswitch%}{%endfunc%}")
+
+	// multiple default statements
+	testParseFailure(t, "{%func f()%}{%switch%}{%case%}aaa{%default%}bbb{%default%}{%endswitch%}{%endfunc%}")
+}
+
 func TestParseBreakContinueReturn(t *testing.T) {
 	testParseSuccess(t, `{% func a() %}{% for %}{% continue %}{% break %}{% return %}{% endfor %}{% endfunc %}`)
 	testParseSuccess(t, `{% func a() %}{% for %}
@@ -315,6 +376,7 @@ func TestParserSuccess(t *testing.T) {
 
 	// interface
 	testParseSuccess(t, "{%interface Foo { Bar()\nBaz() } %}")
+	testParseSuccess(t, "{%iface Foo { Bar()\nBaz() } %}")
 
 	// method
 	testParseSuccess(t, "{%func (s *S) Foo(bar, baz string) %}{%endfunc%}")

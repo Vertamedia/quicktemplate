@@ -76,11 +76,24 @@ Now define private printArgs, which is used in Foo via {%= %} tag
 		alert("foo {%j "bar\naaa" %} baz")<br/>
 		<a href="?{%u "аргумент 1"%}={%u "значение=&1"%}">test</a>
 	</li>
+
+	Switch statement:
+	{% stripspace %}
+		a.S = 
+	{% switch a.S %}
+	{% case "foo" %}
+		foo
+	{% case "bar" %}
+		bar
+	{% default %}
+		{%q a.S %}
+	{% endswitch %}
+	{% endstripspace %}
 {% endfunc %}
 
 
 Now create page template interface.
-{% interface Page {
+{% iface Page {
 	// Must print template head
 	Head()
 
