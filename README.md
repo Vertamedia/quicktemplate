@@ -394,9 +394,13 @@ There are other useful tags supported by quicktemplate:
     identical output, the first approach is optimized for speed.
 
   * Prefer using existing output tags instead of passing `fmt.Sprintf`
-    to `{%s %}` output tag. For instance, use `{%d num %}` instead
+    to `{%s %}`. For instance, use `{%d num %}` instead
     of `{%s fmt.Sprintf("%d", num) %}`, because the first approach is optimized
     for speed.
+
+  * Prefer using specific output tags instead of generic output tag
+    `{%v %}`. For instance, use `{%s str %}` instead of `{%v str %}`, since
+    specific output tags are optimized for speed.
 
   * Prefer creating custom function templates instead of composing complex
     strings by hands before passing them to `{%s %}`.
@@ -425,7 +429,7 @@ There are other useful tags supported by quicktemplate:
     {% stripspace %}
     {% func complexStr(n int) %}
         {% for i := 0; i < n; i++ %}
-            num {%d i %}{% newline %}
+            num{% space %}{%d i %}{% newline %}
         {% endfor %}
     {% endfunc %}
     {% endstripspace %}
