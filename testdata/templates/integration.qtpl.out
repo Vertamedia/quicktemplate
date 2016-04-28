@@ -16,7 +16,7 @@
 		<li>Int: 42</li>
 		<li>Float: 3.14</li>
 		<li>&quot;\u003cquoted&gt; \&quot;json\&quot;\n\t\t\t\tstring&quot;</li>
-		<li>alert("foo \&quot;json\&quot;-safe\n\t\t\t\t\u003cstring&gt; aa")</li>
+		<li>alert("foo \&quot;json\&quot;-safe\n\t\t\t\t\u003cstring&gt; aa" + 'bar \u0027;alert(\&quot;evil\&quot;)\u003c/script&gt;')</li>
 		<li><a href="?%D0%BA%D0%BB%D1%8E%D1%87=%D0%B7%D0%BD%D0%B0%D1%87%D0%B5%D0%BD%D0%B8%D0%B5%26%3D%3F123">test</a></li>
 		<li>{&lt;b&gt;foobar`&lt;/b&gt;}</li>
 	</ul>
@@ -28,7 +28,7 @@
 		<li>Int: 42</li>
 		<li>Float: 3.14</li>
 		<li>"\u003cquoted> \"json\"\n\t\t\t\tstring"</li>
-		<li>alert("foo \"json\"-safe\n\t\t\t\t\u003cstring> aa")</li>
+		<li>alert("foo \"json\"-safe\n\t\t\t\t\u003cstring> aa" + 'bar \u0027;alert(\"evil\")\u003c/script>')</li>
 		<li><a href="?%D0%BA%D0%BB%D1%8E%D1%87=%D0%B7%D0%BD%D0%B0%D1%87%D0%B5%D0%BD%D0%B8%D0%B5%26%3D%3F123">test</a></li>
 		<li>{<b>foobar`</b>}</li>
 	</ul>

@@ -81,7 +81,11 @@ func StreamIntegration(qw422016 *qt422016.Writer) {
 	qw422016.E().J(`"json"-safe
 				<string>`)
 	//line testdata/templates/integration.qtpl:25
-	qw422016.N().S(` aa")</li>
+	qw422016.N().S(` aa" + 'bar `)
+	//line testdata/templates/integration.qtpl:25
+	qw422016.E().J(`';alert("evil")</script>`)
+	//line testdata/templates/integration.qtpl:25
+	qw422016.N().S(`')</li>
 		<li><a href="?`)
 	//line testdata/templates/integration.qtpl:26
 	qw422016.N().U("ключ")
@@ -131,7 +135,11 @@ func StreamIntegration(qw422016 *qt422016.Writer) {
 	qw422016.N().J(`"json"-safe
 				<string>`)
 	//line testdata/templates/integration.qtpl:39
-	qw422016.N().S(` aa")</li>
+	qw422016.N().S(` aa" + 'bar `)
+	//line testdata/templates/integration.qtpl:39
+	qw422016.N().J(`';alert("evil")</script>`)
+	//line testdata/templates/integration.qtpl:39
+	qw422016.N().S(`')</li>
 		<li><a href="?`)
 	//line testdata/templates/integration.qtpl:40
 	qw422016.N().U("ключ")

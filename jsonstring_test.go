@@ -2,6 +2,7 @@ package quicktemplate
 
 import (
 	"encoding/json"
+	"strings"
 	"testing"
 )
 
@@ -17,6 +18,8 @@ func TestAppendJSONString(t *testing.T) {
 		baz`)
 	testAppendJSONString(t, `this is a "тест"`)
 	testAppendJSONString(t, `привет test`)
+
+	testAppendJSONString(t, `</script><script>alert('evil')</script>`)
 }
 
 func testAppendJSONString(t *testing.T, s string) {
@@ -24,8 +27,14 @@ func testAppendJSONString(t *testing.T, s string) {
 	if err != nil {
 		t.Fatalf("unexpected error when encoding string %q: %s", s, err)
 	}
-	result := appendJSONString(nil, s)
-	if string(result) != string(expectedResult) {
+
+	result := string(appendJSONString(nil, s))
+	if strings.Contains(result, "'") {
+		t.Fatalf("json string shouldn't contain single quote: %q, src %q", result, s)
+	}
+	result = strings.Replace(result, `\u0027`, "'", -1)
+	result = strings.Replace(result, ">", `\u003e`, -1)
+	if result != string(expectedResult) {
 		t.Fatalf("unexpected result %q. Expecting %q. original string %q", result, expectedResult, s)
 	}
 }

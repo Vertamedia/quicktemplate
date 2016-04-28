@@ -22,7 +22,7 @@ It should contains all the quicktemplate stuff.
 		<li>{%q `<quoted> "json"
 				string` %}</li>
 		<li>alert("foo {%j `"json"-safe
-				<string>` %} aa")</li>
+				<string>` %} aa" + 'bar {%j `';alert("evil")</script>` %}')</li>
 		<li><a href="?{%u "ключ" %}={%u "значение&=?123" %}">test</a></li>
 		<li>{%v struct{ A string }{A: "<b>foobar`</b>"} %}</li>
 	</ul>
@@ -36,7 +36,7 @@ It should contains all the quicktemplate stuff.
 		<li>{%q= `<quoted> "json"
 				string` %}</li>
 		<li>alert("foo {%j= `"json"-safe
-				<string>` %} aa")</li>
+				<string>` %} aa" + 'bar {%j= `';alert("evil")</script>` %}')</li>
 		<li><a href="?{%u= "ключ" %}={%u= "значение&=?123" %}">test</a></li>
 		<li>{%v= struct{ A string }{A: "<b>foobar`</b>"} %}</li>
 	</ul>

@@ -23,6 +23,8 @@ func appendJSONString(dst []byte, s string) []byte {
 			out = `\u0008`
 		case '<':
 			out = `\u003c`
+		case '\'':
+			out = `\u0027`
 		case 0:
 			out = `\u0000`
 		}
