@@ -44,20 +44,30 @@ The following simple template is used in the benchmark:
 Benchmark results:
 
 ```
-$ go test -bench=Template -benchmem ./tests
-BenchmarkQuickTemplate1-4  	10000000	       158 ns/op	       0 B/op	       0 allocs/op
-BenchmarkQuickTemplate10-4 	 2000000	       604 ns/op	       0 B/op	       0 allocs/op
-BenchmarkQuickTemplate100-4	  300000	      5498 ns/op	       0 B/op	       0 allocs/op
-BenchmarkHTMLTemplate1-4   	  500000	      2807 ns/op	     752 B/op	      23 allocs/op
-BenchmarkHTMLTemplate10-4  	  100000	     13527 ns/op	    3521 B/op	     117 allocs/op
-BenchmarkHTMLTemplate100-4 	   10000	    133503 ns/op	   34499 B/op	    1152 allocs/op
+$ go test -bench=Template -benchmem github.com/valyala/quicktemplate/tests
+BenchmarkQuickTemplate1-4                 	10000000	       120 ns/op	       0 B/op	       0 allocs/op
+BenchmarkQuickTemplate10-4                	 3000000	       441 ns/op	       0 B/op	       0 allocs/op
+BenchmarkQuickTemplate100-4               	  300000	      3945 ns/op	       0 B/op	       0 allocs/op
+BenchmarkHTMLTemplate1-4                  	  500000	      2501 ns/op	     752 B/op	      23 allocs/op
+BenchmarkHTMLTemplate10-4                 	  100000	     12442 ns/op	    3521 B/op	     117 allocs/op
+BenchmarkHTMLTemplate100-4                	   10000	    123392 ns/op	   34498 B/op	    1152 allocs/op
 ```
 
 [goTemplateBenchmark](https://github.com/SlinSo/goTemplateBenchmark) compares QuickTemplate with numerous go templating packages. QuickTemplate performs favorably.
 
 # Security
 
-By default all the template placeholders are html-escaped.
+  * All the template placeholders are html-escaped by default.
+  * Template placeholders for JSON strings prevents from `</script>`-based
+    XSS attacks:
+
+  ```qtpl
+  {% func FailedXSS() %}
+  <script>
+      var s = {%q= "</script><script>alert('you pwned!')" %};
+  </script>
+  {% endfunc %}
+  ```
 
 # Examples
 
@@ -193,13 +203,16 @@ The `{%s x %}` is used for printing html-safe strings, while `{%= F() %}`
 is used for embedding template function calls. Quicktemplate supports also
 other output tags:
 
-  * `{%d num %}` for integers
-  * `{%f float %}` for float64
-  * `{%z bytes %}` for byte slices
-  * `{%q str %}` for json-compatible quoted strings.
-  * `{%j str %}` for embedding str into json string. Unlike `{%q str %}`
+  * `{%d num %}` for integers.
+  * `{%f float %}` for float64.
+    Floating point precision may be set via `{%f.precision float %}`.
+    For example, `{%f.2 1.2345 %}` outputs `1.23`.
+  * `{%z bytes %}` for byte slices.
+  * `{%q str %}` and `{%qz bytes %}` for json-compatible quoted strings.
+  * `{%j str %}` and `{%jz bytes %}` for embedding str into json string. Unlike `{%q str %}`
     it doesn't quote the string.
-  * `{%u str %}` for [URL encoding](https://en.wikipedia.org/wiki/Percent-encoding) the given str.
+  * `{%u str %}` and `{%uz bytes %}` for [URL encoding](https://en.wikipedia.org/wiki/Percent-encoding)
+    the given str.
   * `{%v anything %}` is equivalent to `%v` in [printf-like functions](https://golang.org/pkg/fmt/).
 
 All these output tags produce html-safe output, i.e. they escape `<` to `&lt;`,
@@ -447,6 +460,90 @@ There are other useful tags supported by quicktemplate:
   * [Profile](http://blog.golang.org/profiling-go-programs) your programs
     for memory allocations and fix top functions from
     `go tool pprof --alloc_objects` output.
+
+
+# Use cases
+
+While the main quicktemplate purpose is generating html, it may be used
+for generating other data too. For example, JSON and XML marshaling may
+be easily implemented with quicktemplate:
+
+```qtpl
+{% code
+type MarshalRow struct {
+	Msg string
+	N int
+}
+
+type MarshalData struct {
+	Foo int
+	Bar string
+	Rows []MarshalRow
+}
+%}
+
+// JSON marshaling
+{% stripspace %}
+{% func (d *MarshalData) JSON() %}
+{
+	"Foo": {%d d.Foo %},
+	"Bar": {%q= d.Bar %},
+	"Rows":[
+		{% for i, r := range d.Rows %}
+			{
+				"Msg": {%q= r.Msg %},
+				"N": {%d r.N %}
+			}
+			{% if i + 1 < len(d.Rows) %},{% endif %}
+		{% endfor %}
+	]
+}
+{% endfunc %}
+{% endstripspace %}
+
+// XML marshaling
+{% stripspace %}
+{% func (d *MarshalData) XML() %}
+<MarshalData>
+	<Foo>{%d d.Foo %}</Foo>
+	<Bar>{%s d.Bar %}</Bar>
+	<Rows>
+	{% for _, r := range d.Rows %}
+		<Row>
+			<Msg>{%s r.Msg %}</Msg>
+			<N>{%d r.N %}</N>
+		</Row>
+	{% endfor %}
+	</Rows>
+</MarshalData>
+{% endfunc %}
+{% endstripspace %}
+```
+
+Usually marshaling built with quicktemplate works faster than the marshaling
+implemented via standard [encoding/json](https://golang.org/pkg/encoding/json/)
+and [encoding/xml](https://golang.org/pkg/encoding/xml/).
+The corresponding benchmark results:
+
+```
+go test -bench=Marshal -benchmem github.com/valyala/quicktemplate/tests
+BenchmarkMarshalJSONStd1-4                	 3000000	       480 ns/op	       8 B/op	       1 allocs/op
+BenchmarkMarshalJSONStd10-4               	 1000000	      1842 ns/op	       8 B/op	       1 allocs/op
+BenchmarkMarshalJSONStd100-4              	  100000	     15820 ns/op	       8 B/op	       1 allocs/op
+BenchmarkMarshalJSONStd1000-4             	   10000	    159327 ns/op	      59 B/op	       1 allocs/op
+BenchmarkMarshalJSONQuickTemplate1-4      	10000000	       162 ns/op	       0 B/op	       0 allocs/op
+BenchmarkMarshalJSONQuickTemplate10-4     	 2000000	       748 ns/op	       0 B/op	       0 allocs/op
+BenchmarkMarshalJSONQuickTemplate100-4    	  200000	      6572 ns/op	       0 B/op	       0 allocs/op
+BenchmarkMarshalJSONQuickTemplate1000-4   	   20000	     66784 ns/op	      29 B/op	       0 allocs/op
+BenchmarkMarshalXMLStd1-4                 	 1000000	      1652 ns/op	       2 B/op	       2 allocs/op
+BenchmarkMarshalXMLStd10-4                	  200000	      7533 ns/op	      11 B/op	      11 allocs/op
+BenchmarkMarshalXMLStd100-4               	   20000	     65763 ns/op	     195 B/op	     101 allocs/op
+BenchmarkMarshalXMLStd1000-4              	    2000	    663373 ns/op	    3522 B/op	    1002 allocs/op
+BenchmarkMarshalXMLQuickTemplate1-4       	10000000	       145 ns/op	       0 B/op	       0 allocs/op
+BenchmarkMarshalXMLQuickTemplate10-4      	 3000000	       597 ns/op	       0 B/op	       0 allocs/op
+BenchmarkMarshalXMLQuickTemplate100-4     	  300000	      5833 ns/op	       0 B/op	       0 allocs/op
+BenchmarkMarshalXMLQuickTemplate1000-4    	   30000	     53000 ns/op	      32 B/op	       0 allocs/op
+```
 
 # FAQ
 

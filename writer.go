@@ -72,38 +72,57 @@ func (w *QWriter) Z(z []byte) {
 	w.w.Write(z)
 }
 
+// SZ is a synonym to Z.
+func (w *QWriter) SZ(z []byte) {
+	w.w.Write(z)
+}
+
 // D writes n to w.
 func (w *QWriter) D(n int) {
-	bb := AcquireByteBuffer()
-	bb.B = strconv.AppendInt(bb.B, int64(n), 10)
-	w.w.Write(bb.B)
-	ReleaseByteBuffer(bb)
+	writeQuick(w.w, func(dst []byte) []byte {
+		return strconv.AppendInt(dst, int64(n), 10)
+	})
 }
 
 // F writes f to w.
 func (w *QWriter) F(f float64) {
-	bb := AcquireByteBuffer()
-	bb.B = strconv.AppendFloat(bb.B, f, 'f', -1, 64)
-	w.w.Write(bb.B)
-	ReleaseByteBuffer(bb)
+	w.FPrec(f, -1)
+}
+
+// FPrec writes f to w using the given floating point precision.
+func (w *QWriter) FPrec(f float64, prec int) {
+	writeQuick(w.w, func(dst []byte) []byte {
+		return strconv.AppendFloat(dst, f, 'f', prec, 64)
+	})
 }
 
 // Q writes quoted json-safe s to w.
 func (w *QWriter) Q(s string) {
-	bb := AcquireByteBuffer()
-	bb.B = appendJSONString(bb.B, s)
-	w.w.Write(bb.B)
-	ReleaseByteBuffer(bb)
+	ww := w.w
+	ww.Write(strQuote)
+	writeJSONString(w.w, s)
+	ww.Write(strQuote)
+}
+
+var strQuote = []byte(`"`)
+
+// QZ writes quoted json-safe z to w.
+func (w *QWriter) QZ(z []byte) {
+	w.Q(unsafeBytesToStr(z))
 }
 
 // J writes json-safe s to w.
 //
 // Unlike Q it doesn't qoute resulting s.
 func (w *QWriter) J(s string) {
-	bb := AcquireByteBuffer()
-	bb.B = appendJSONString(bb.B, s)
-	w.w.Write(bb.B[1 : len(bb.B)-1])
-	ReleaseByteBuffer(bb)
+	writeJSONString(w.w, s)
+}
+
+// JZ writes json-safe z to w.
+//
+// Unlike Q it doesn't qoute resulting z.
+func (w *QWriter) JZ(z []byte) {
+	w.J(unsafeBytesToStr(z))
 }
 
 // V writes v to w.
@@ -113,8 +132,24 @@ func (w *QWriter) V(v interface{}) {
 
 // U writes url-encoded s to w.
 func (w *QWriter) U(s string) {
-	bb := AcquireByteBuffer()
-	bb.B = appendURLEncode(bb.B, s)
-	w.w.Write(bb.B)
-	ReleaseByteBuffer(bb)
+	writeQuick(w.w, func(dst []byte) []byte {
+		return appendURLEncode(dst, s)
+	})
+}
+
+// UZ writes url-encoded z to w.
+func (w *QWriter) UZ(z []byte) {
+	w.U(unsafeBytesToStr(z))
+}
+
+func writeQuick(w io.Writer, f func(dst []byte) []byte) {
+	bb, ok := w.(*ByteBuffer)
+	if !ok {
+		bb = AcquireByteBuffer()
+	}
+	bb.B = f(bb.B)
+	if !ok {
+		w.Write(bb.B)
+		ReleaseByteBuffer(bb)
+	}
 }

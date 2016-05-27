@@ -10,6 +10,32 @@ import (
 	"github.com/valyala/quicktemplate"
 )
 
+func TestParseFPrecFailure(t *testing.T) {
+	// negative precision
+	testParseFailure(t, "{% func a()%}{%f.-1 1.2 %}{% endfunc %}")
+
+	// non-numeric precision
+	testParseFailure(t, "{% func a()%}{%f.foo 1.2 %}{% endfunc %}")
+
+	// more than one dot
+	testParseFailure(t, "{% func a()%}{%f.1.234 1.2 %}{% endfunc %}")
+	testParseFailure(t, "{% func a()%}{%f.1.foo 1.2 %}{% endfunc %}")
+}
+
+func TestParseFPrecSuccess(t *testing.T) {
+	// no precision
+	testParseSuccess(t, "{% func a()%}{%f 1.2 %}{% endfunc %}")
+	testParseSuccess(t, "{% func a()%}{%f= 1.2 %}{% endfunc %}")
+
+	// precision set
+	testParseSuccess(t, "{% func a()%}{%f.1 1.234 %}{% endfunc %}")
+	testParseSuccess(t, "{% func a()%}{%f.10= 1.234 %}{% endfunc %}")
+
+	// missing precision
+	testParseSuccess(t, "{% func a()%}{%f. 1.234 %}{% endfunc %}")
+	testParseSuccess(t, "{% func a()%}{%f.= 1.234 %}{% endfunc %}")
+}
+
 func TestParseSwitchCaseSuccess(t *testing.T) {
 	// single-case switch
 	testParseSuccess(t, "{%func a()%}{%switch n%}{%case 1%}aaa{%endswitch%}{%endfunc%}")
@@ -20,15 +46,19 @@ func TestParseSwitchCaseSuccess(t *testing.T) {
 	// default statement
 	testParseSuccess(t, "{%func a()%}{%switch%}{%default%}{%endswitch%}{%endfunc%}")
 
+	// switch with break
+	testParseSuccess(t, "{%func a()%}{%switch n%}{%case 1%}aaa{%break%}ignore{%endswitch%}{%endfunc%}")
+
 	// complex switch
 	testParseSuccess(t, `{%func f()%}{% for %}
 		{%switch foo() %}
 		The text before the first case
-		is converted into comment
+		is converted into a comment
 		{%case "foobar" %}
 			{% switch %}
 			{% case bar() %}
-				aaaa
+				aaaa{% break %}
+				ignore this line
 			{% case baz() %}
 				bbbb
 			{% endswitch %}
@@ -40,11 +70,16 @@ func TestParseSwitchCaseSuccess(t *testing.T) {
 			aaaa
 			{% return %}
 		{% case "www" %}
-			break from the outer loop, not from the switch
+			break from the switch
 			{% break %}
 		{% default %}
 			foobar
 		{%endswitch%}
+		{% if 42 == 2 %}
+			break for the loop
+			{% break %}
+			ignore this
+		{% endif %}
 	{% endfor %}{%endfunc%}`)
 }
 
@@ -60,9 +95,8 @@ func TestParseSwitchCaseFailure(t *testing.T) {
 
 	// the first tag inside switch is non-case
 	testParseFailure(t, "{%func f()%}{%switch%}{%return%}{%endswitch%}{%endfunc%}")
-
-	// break inside switch without outer loop
-	testParseFailure(t, "{%func f()%}{%switch%}{%case 1%}{%break%}{%endswitch%}{%endfunc%}")
+	testParseFailure(t, "{%func F()%}{%switch%}{%break%}{%endswitch%}{%endfunc%}")
+	testParseFailure(t, "{%func f()%}{%switch 1%}{%return%}{%case 1%}aaa{%endswitch%}{%endfunc%}")
 
 	// empty case
 	testParseFailure(t, "{%func f()%}{%switch%}{%case%}aaa{%endswitch%}{%endfunc%}")

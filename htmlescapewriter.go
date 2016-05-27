@@ -27,42 +27,37 @@ type htmlEscapeWriter struct {
 	w io.Writer
 }
 
-func (w *htmlEscapeWriter) Write(p []byte) (int, error) {
-	i := 0
-	ww := w.w
-	var (
-		b   []byte
-		err error
-		n   int
-	)
-	for j, c := range p {
-		b = nil
+func (w *htmlEscapeWriter) Write(b []byte) (int, error) {
+	write := w.w.Write
+	j := 0
+	for i, c := range b {
 		switch c {
 		case '<':
-			b = strLT
+			write(b[j:i])
+			write(strLT)
+			j = i + 1
 		case '>':
-			b = strGT
+			write(b[j:i])
+			write(strGT)
+			j = i + 1
 		case '"':
-			b = strQuot
+			write(b[j:i])
+			write(strQuot)
+			j = i + 1
 		case '\'':
-			b = strApos
+			write(b[j:i])
+			write(strApos)
+			j = i + 1
 		case '&':
-			b = strAmp
-		}
-		if b != nil {
-			if n, err = ww.Write(p[i:j]); err != nil {
-				return i + n, err
-			}
-			if n, err = ww.Write(b); err != nil {
-				return j, err
-			}
-			i = j + 1
+			write(b[j:i])
+			write(strAmp)
+			j = i + 1
 		}
 	}
-	if n, err = ww.Write(p[i:]); err != nil {
-		return i + n, err
+	if n, err := write(b[j:]); err != nil {
+		return j + n, err
 	}
-	return len(p), nil
+	return len(b), nil
 }
 
 var (

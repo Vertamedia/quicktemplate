@@ -6,6 +6,17 @@ import (
 	"testing"
 )
 
+func TestScannerTagNameWithDotAndEqual(t *testing.T) {
+	testScannerSuccess(t, "{%foo.bar.34 baz aaa%} awer{% aa= %}",
+		[]tt{
+			{ID: tagName, Value: "foo.bar.34"},
+			{ID: tagContents, Value: "baz aaa"},
+			{ID: text, Value: " awer"},
+			{ID: tagName, Value: "aa="},
+			{ID: tagContents, Value: ""},
+		})
+}
+
 func TestScannerStripspaceSuccess(t *testing.T) {
 	testScannerSuccess(t, "  aa\n\t {%stripspace%} \t\n  f\too \n   b  ar \n\r\t {%  bar baz  asd %}\n\nbaz \n\t \taaa  \n{%endstripspace%} bb  ", []tt{
 		{ID: text, Value: "  aa\n\t "},

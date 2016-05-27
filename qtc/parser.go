@@ -8,6 +8,7 @@ import (
 	gotoken "go/token"
 	"io"
 	"path/filepath"
+	"strconv"
 	"strings"
 )
 
@@ -17,6 +18,7 @@ type parser struct {
 	packageName       string
 	prefix            string
 	forDepth          int
+	switchDepth       int
 	skipOutputDepth   int
 	importsUseEmitted bool
 }
@@ -307,6 +309,7 @@ func (p *parser) parseSwitch() error {
 	p.Printf("switch %s {", t.Value)
 	caseNum := 0
 	defaultFound := false
+	p.switchDepth++
 	for s.Next() {
 		t := s.Token()
 		switch t.ID {
@@ -328,6 +331,7 @@ func (p *parser) parseSwitch() error {
 				if err = skipTagContents(s); err != nil {
 					return err
 				}
+				p.switchDepth--
 				p.Printf("}")
 				return nil
 			case "case":
@@ -432,10 +436,12 @@ func (p *parser) parseIf() error {
 
 func (p *parser) tryParseCommonTags(tagBytes []byte) (bool, error) {
 	s := p.s
-	tagNameStr := string(tagBytes)
+	tagNameStr, prec := splitTagNamePrec(string(tagBytes))
 	switch tagNameStr {
 	case "s", "v", "d", "f", "q", "z", "j", "u",
-		"s=", "v=", "d=", "f=", "q=", "z=", "j=", "u=":
+		"s=", "v=", "d=", "f=", "q=", "z=", "j=", "u=",
+		"sz", "qz", "jz", "uz",
+		"sz=", "qz=", "jz=", "uz=":
 		t, err := expectTagContents(s)
 		if err != nil {
 			return false, err
@@ -444,16 +450,19 @@ func (p *parser) tryParseCommonTags(tagBytes []byte) (bool, error) {
 			return false, fmt.Errorf("invalid output tag value at %s: %s", s.Context(), err)
 		}
 		filter := "N()."
-		if len(tagNameStr) == 1 {
-			switch tagNameStr {
-			case "s", "v", "q", "z", "j":
-				filter = "E()."
-			}
-		} else {
+		switch tagNameStr {
+		case "s", "v", "q", "z", "j", "sz", "qz", "jz":
+			filter = "E()."
+		}
+		if strings.HasSuffix(tagNameStr, "=") {
 			tagNameStr = tagNameStr[:len(tagNameStr)-1]
 		}
-		tagNameStr = strings.ToUpper(tagNameStr)
-		p.Printf("qw422016.%s%s(%s)", filter, tagNameStr, t.Value)
+		if tagNameStr == "f" && prec >= 0 {
+			p.Printf("qw422016.N().FPrec(%s, %d)", t.Value, prec)
+		} else {
+			tagNameStr = strings.ToUpper(tagNameStr)
+			p.Printf("qw422016.%s%s(%s)", filter, tagNameStr, t.Value)
+		}
 	case "=":
 		t, err := expectTagContents(s)
 		if err != nil {
@@ -469,8 +478,8 @@ func (p *parser) tryParseCommonTags(tagBytes []byte) (bool, error) {
 			return false, err
 		}
 	case "break":
-		if p.forDepth <= 0 {
-			return false, fmt.Errorf("found break tag outside for loop")
+		if p.forDepth <= 0 && p.switchDepth <= 0 {
+			return false, fmt.Errorf("found break tag outside for loop and switch block")
 		}
 		if err := p.skipAfterTag(tagNameStr); err != nil {
 			return false, err
@@ -502,6 +511,24 @@ func (p *parser) tryParseCommonTags(tagBytes []byte) (bool, error) {
 		return false, nil
 	}
 	return true, nil
+}
+
+func splitTagNamePrec(tagName string) (string, int) {
+	parts := strings.Split(tagName, ".")
+	if len(parts) == 2 && parts[0] == "f" {
+		p := parts[1]
+		if strings.HasSuffix(p, "=") {
+			p = p[:len(p)-1]
+		}
+		if len(p) == 0 {
+			return "f", 0
+		}
+		prec, err := strconv.Atoi(p)
+		if err == nil && prec >= 0 {
+			return "f", prec
+		}
+	}
+	return tagName, -1
 }
 
 func (p *parser) skipAfterTag(tagStr string) error {

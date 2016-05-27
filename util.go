@@ -16,3 +16,7 @@ func unsafeStrToBytes(s string) []byte {
 	}
 	return *(*[]byte)(unsafe.Pointer(&bh))
 }
+
+func unsafeBytesToStr(z []byte) string {
+	return *(*string)(unsafe.Pointer(&z))
+}

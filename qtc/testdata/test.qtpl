@@ -72,9 +72,12 @@ Now define private printArgs, which is used in Foo via {%= %} tag
 		{% for %}And this: {% break %} {% return %}{% endfor %}
 	{% endif %}
 	<li>
-		a[{%d i %}] = {S: {%q a.S %}, N: {%d a.N %}}<br>
-		alert("foo {%j "bar\naaa" %} baz")<br/>
-		<a href="?{%u "аргумент 1"%}={%u "значение=&1"%}">test</a>
+		a[{%d i %}] = {S: {%q a.S %}, SS: {%qz []byte(a.S) %}, N: {%d a.N %}}<br>
+		{%s a.S %}, {%z []byte(a.S) %}, {%sz []byte(a.S) %}
+		{%f 1.234 %}, {%f.1 1.234 %}, {% f.2= 1.234 %}
+		alert("foo {%j "bar\naaa" %} baz {%jz []byte("aaa") %}")<br/>
+		<a href="?{%u "аргумент 1"%}={%u "значение=<>\"'&1"%}">test1</a>
+		<a href="?{%uz []byte("foobar") %}=123">test2</a>
 	</li>
 
 	Switch statement:
@@ -83,6 +86,8 @@ Now define private printArgs, which is used in Foo via {%= %} tag
 	{% switch a.S %}
 	{% case "foo" %}
 		foo
+		{%break%}
+		ignore this
 	{% case "bar" %}
 		bar
 	{% default %}

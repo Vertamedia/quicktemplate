@@ -8,7 +8,7 @@ func TestHTMLEscapeWriter(t *testing.T) {
 	testHTMLEscapeWriter(t, "", "")
 	testHTMLEscapeWriter(t, "foobar", "foobar")
 	testHTMLEscapeWriter(t, `<h1>fo'"bar&</h1>`, "&lt;h1&gt;fo&#39;&quot;bar&amp;&lt;/h1&gt;")
-	testHTMLEscapeWriter(t, "fo<b>bar", "fo&lt;b&gt;bar")
+	testHTMLEscapeWriter(t, "fo<b>bar привет\n\tbaz", "fo&lt;b&gt;bar привет\n\tbaz")
 }
 
 func testHTMLEscapeWriter(t *testing.T, s, expectedS string) {

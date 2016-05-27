@@ -1,7 +1,12 @@
 package quicktemplate
 
 func appendURLEncode(dst []byte, src string) []byte {
-	for i, n := 0, len(src); i < n; i++ {
+	n := len(src)
+	if n > 0 {
+		// Hint the compiler to remove bounds checks in the loop below.
+		_ = src[n-1]
+	}
+	for i := 0; i < n; i++ {
 		c := src[i]
 
 		// See http://www.w3.org/TR/html5/forms.html#form-submission-algorithm
