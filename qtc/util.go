@@ -6,6 +6,10 @@ import (
 	"unicode"
 )
 
+// mangleSuffix is used for mangling quicktemplate-specific names
+// in the generated code, so they don't clash with user-provided names.
+const mangleSuffix = "422016"
+
 func stripLeadingSpace(b []byte) []byte {
 	for len(b) > 0 && isSpace(b[0]) {
 		b = b[1:]

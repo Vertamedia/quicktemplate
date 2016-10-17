@@ -118,7 +118,7 @@ This function prints arbitrary page.
 Implement contacts page
 {% code type ContactsPage struct {} %}
 {% func (b *ContactsPage) Head() %}<title>Contacts!</title>{% endfunc %}
-{% func (b *ContactsPage) Body(title string) %}Put here contact info{% endfunc Body %}
+{% func (b *ContactsPage) Body(title string) %}Put here contact info{% endfunc %}
 
 Implement HomePage
 {% code type Homepage struct {} %}
@@ -134,3 +134,11 @@ unused code may be commented:
 	foobar
 {% endfunc %}
 {% endcomment %}
+
+variadic function
+{% func Variadic(a int, b ...string) %}
+	a = {%d a %}
+	{% for i, s := range b %}
+		{%d i %}: {%s s %}
+	{% endfor %}
+{% endfunc %}

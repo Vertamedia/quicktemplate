@@ -1,7 +1,6 @@
 [![Build Status](https://travis-ci.org/valyala/quicktemplate.svg)](https://travis-ci.org/valyala/quicktemplate)
 [![GoDoc](https://godoc.org/github.com/valyala/quicktemplate?status.svg)](http://godoc.org/github.com/valyala/quicktemplate)
-[![Coverage](http://gocover.io/_badge/github.com/valyala/quicktemplate)](http://gocover.io/github.com/valyala/quicktemplate)
-[![Go Report](http://goreportcard.com/badge/valyala/quicktemplate)](http://goreportcard.com/report/valyala/quicktemplate)
+[![Go Report Card](https://goreportcard.com/badge/github.com/valyala/quicktemplate)](https://goreportcard.com/report/github.com/valyala/quicktemplate)
 
 # quicktemplate
 
@@ -13,6 +12,8 @@ Inspired by [mako templates](http://www.makotemplates.org/) philosophy.
 
   * [Extremely fast](#performance-comparison-with-htmltemplate).
     Templates are converted into Go code and then compiled.
+  * Quicktemplate syntax is very close to Go - there is no need in learning
+    yet another template language before starting to use quicktemplate.
   * Almost all the bugs are caught during template compilation, so production
     suffers less from template-related bugs.
   * Easy to use. See [quickstart](#quick-start) and [examples](https://github.com/valyala/quicktemplate/tree/master/examples)
@@ -21,7 +22,7 @@ Inspired by [mako templates](http://www.makotemplates.org/) philosophy.
     Be careful with this power - do not query db and/or external resources from
     templates unless you miss php way in Go :) This power is mostly for
     arbitrary data transformations.
-  * Easy to understand template inheritance powered by [Go interfaces](https://golang.org/doc/effective_go.html#interfaces).
+  * Easy to use template inheritance powered by [Go interfaces](https://golang.org/doc/effective_go.html#interfaces).
     See [this example](https://github.com/valyala/quicktemplate/tree/master/examples/basicserver) for details.
   * Templates are compiled into a single binary, so there is no need in copying
     template files to the server.
@@ -58,7 +59,7 @@ BenchmarkHTMLTemplate100-4                	   10000	    123392 ns/op	   34498 B/
 # Security
 
   * All the template placeholders are html-escaped by default.
-  * Template placeholders for JSON strings prevents from `</script>`-based
+  * Template placeholders for JSON strings prevent from `</script>`-based
     XSS attacks:
 
   ```qtpl
@@ -75,11 +76,19 @@ See [examples](https://github.com/valyala/quicktemplate/tree/master/examples).
 
 # Quick start
 
+First of all, install `quicktemplate` package
+and [quicktemplate compiler](https://github.com/valyala/quicktemplate/tree/master/qtc) (`qtc`):
+
+```
+go get -u github.com/valyala/quicktemplate
+go get -u github.com/valyala/quicktemplate/qtc
+```
+
 Let's start with a minimal template example:
 
 ```qtpl
 All the text outside function templates is treated as comments,
-i.e. it is just ignored by quicktemplate compiler (qtc). It is for humans.
+i.e. it is just ignored by quicktemplate compiler (`qtc`). It is for humans.
 
 Hello is a simple template function.
 {% func Hello(name string) %}
@@ -88,12 +97,7 @@ Hello is a simple template function.
 ```
 
 Save this file into `templates` folder under the name `hello.qtpl`
-and run [qtc](https://github.com/valyala/quicktemplate/tree/master/qtc)
-inside this folder. `qtc` may be installed by issuing:
-
-```
-go get -u github.com/valyala/quicktemplate/qtc
-```
+and run `qtc` inside this folder.
 
 If all went ok, `hello.qtpl.go` file must appear in the `templates` folder.
 This file contains Go code for `hello.qtpl`. Let's use it!
@@ -116,7 +120,7 @@ func main() {
 }
 ```
 
-Then run `go run`. If all went ok, you'll see something like this:
+Then issue `go run`. If all went ok, you'll see something like this:
 
 ```
 
@@ -170,8 +174,8 @@ form a single `templates` Go package. Template functions and other template
 stuff is shared between template files located in the same folder.
 So `Hello` template function may be used inside `greetings.qtpl` while
 it is defined in `hello.qtpl`.
-Moreover, the folder may contain ordinary Go files and its' contents may
-be used inside templates.
+Moreover, the folder may contain ordinary Go files, so its' contents may
+be used inside templates and vice versa.
 
 Now put the following code into `main.go`:
 
@@ -576,6 +580,10 @@ BenchmarkMarshalXMLQuickTemplate1000-4    	   30000	     53000 ns/op	      32 B/
         to template arguments, template inheritance and embedding function
         templates into other templates.
       * Performance optimizations.
+
+* *Is there a syntax highlighting for qtpl files?*
+
+  Yes - see [this issue](https://github.com/valyala/quicktemplate/issues/19) for details.
 
 * *I didn't find an answer for my question here*
 

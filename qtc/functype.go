@@ -88,7 +88,11 @@ func parseFuncDef(b []byte) (*funcType, error) {
 			if n == nil {
 				return nil, fmt.Errorf("func cannot contain untyped arguments")
 			}
-			tmp = append(tmp, n.Name)
+			if _, isVariadic := f.Type.(*ast.Ellipsis); isVariadic {
+				tmp = append(tmp, n.Name+"...")
+			} else {
+				tmp = append(tmp, n.Name)
+			}
 		}
 	}
 	argNames := strings.Join(tmp, ", ")
@@ -135,7 +139,7 @@ func parseFuncCall(b []byte) (*funcType, error) {
 }
 
 func (f *funcType) DefStream(dst string) string {
-	return fmt.Sprintf("%s%s%s(%s *qt422016.Writer%s)", f.defPrefix, f.prefixStream(), f.name, dst, f.args)
+	return fmt.Sprintf("%s%s%s(%s *qt%s.Writer%s)", f.defPrefix, f.prefixStream(), f.name, dst, mangleSuffix, f.args)
 }
 
 func (f *funcType) CallStream(dst string) string {
@@ -143,7 +147,7 @@ func (f *funcType) CallStream(dst string) string {
 }
 
 func (f *funcType) DefWrite(dst string) string {
-	return fmt.Sprintf("%s%s%s(%s qtio422016.Writer%s)", f.defPrefix, f.prefixWrite(), f.name, dst, f.args)
+	return fmt.Sprintf("%s%s%s(%s qtio%s.Writer%s)", f.defPrefix, f.prefixWrite(), f.name, dst, mangleSuffix, f.args)
 }
 
 func (f *funcType) CallWrite(dst string) string {

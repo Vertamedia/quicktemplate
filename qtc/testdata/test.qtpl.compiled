@@ -546,3 +546,63 @@ func (h *Homepage) Body(title string) string {
 }
 
 // unused code may be commented:
+
+// variadic function
+
+//line testdata/test.qtpl:139
+func StreamVariadic(qw422016 *qt422016.Writer, a int, b ...string) {
+	//line testdata/test.qtpl:139
+	qw422016.N().S(`
+	a = `)
+	//line testdata/test.qtpl:140
+	qw422016.N().D(a)
+	//line testdata/test.qtpl:140
+	qw422016.N().S(`
+	`)
+	//line testdata/test.qtpl:141
+	for i, s := range b {
+		//line testdata/test.qtpl:141
+		qw422016.N().S(`
+		`)
+		//line testdata/test.qtpl:142
+		qw422016.N().D(i)
+		//line testdata/test.qtpl:142
+		qw422016.N().S(`: `)
+		//line testdata/test.qtpl:142
+		qw422016.E().S(s)
+		//line testdata/test.qtpl:142
+		qw422016.N().S(`
+	`)
+		//line testdata/test.qtpl:143
+	}
+	//line testdata/test.qtpl:143
+	qw422016.N().S(`
+`)
+//line testdata/test.qtpl:144
+}
+
+//line testdata/test.qtpl:144
+func WriteVariadic(qq422016 qtio422016.Writer, a int, b ...string) {
+	//line testdata/test.qtpl:144
+	qw422016 := qt422016.AcquireWriter(qq422016)
+	//line testdata/test.qtpl:144
+	StreamVariadic(qw422016, a, b...)
+	//line testdata/test.qtpl:144
+	qt422016.ReleaseWriter(qw422016)
+//line testdata/test.qtpl:144
+}
+
+//line testdata/test.qtpl:144
+func Variadic(a int, b ...string) string {
+	//line testdata/test.qtpl:144
+	qb422016 := qt422016.AcquireByteBuffer()
+	//line testdata/test.qtpl:144
+	WriteVariadic(qb422016, a, b...)
+	//line testdata/test.qtpl:144
+	qs422016 := string(qb422016.B)
+	//line testdata/test.qtpl:144
+	qt422016.ReleaseByteBuffer(qb422016)
+	//line testdata/test.qtpl:144
+	return qs422016
+//line testdata/test.qtpl:144
+}

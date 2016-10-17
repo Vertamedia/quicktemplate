@@ -50,8 +50,8 @@ func AcquireWriter(w io.Writer) *Writer {
 // Do not access released writer, otherwise data races may occur.
 func ReleaseWriter(qw *Writer) {
 	releaseHTMLEscapeWriter(qw.e.w)
-	qw.e.w = nil
-	qw.n.w = nil
+	qw.e.Reset()
+	qw.n.Reset()
 	writerPool.Put(qw)
 }
 
@@ -59,27 +59,46 @@ var writerPool sync.Pool
 
 // QWriter is auxiliary writer used by Writer.
 type QWriter struct {
-	w io.Writer
+	w   io.Writer
+	err error
+}
+
+// Write implements io.Writer.
+func (w *QWriter) Write(p []byte) (int, error) {
+	if w.err != nil {
+		return 0, w.err
+	}
+	n, err := w.w.Write(p)
+	if err != nil {
+		w.err = err
+	}
+	return n, err
+}
+
+// Reset resets QWriter to the original state.
+func (w *QWriter) Reset() {
+	w.w = nil
+	w.err = nil
 }
 
 // S writes s to w.
 func (w *QWriter) S(s string) {
-	w.w.Write(unsafeStrToBytes(s))
+	w.Write(unsafeStrToBytes(s))
 }
 
 // Z writes z to w.
 func (w *QWriter) Z(z []byte) {
-	w.w.Write(z)
+	w.Write(z)
 }
 
 // SZ is a synonym to Z.
 func (w *QWriter) SZ(z []byte) {
-	w.w.Write(z)
+	w.Write(z)
 }
 
 // D writes n to w.
 func (w *QWriter) D(n int) {
-	writeQuick(w.w, func(dst []byte) []byte {
+	w.writeQuick(func(dst []byte) []byte {
 		return strconv.AppendInt(dst, int64(n), 10)
 	})
 }
@@ -91,17 +110,16 @@ func (w *QWriter) F(f float64) {
 
 // FPrec writes f to w using the given floating point precision.
 func (w *QWriter) FPrec(f float64, prec int) {
-	writeQuick(w.w, func(dst []byte) []byte {
+	w.writeQuick(func(dst []byte) []byte {
 		return strconv.AppendFloat(dst, f, 'f', prec, 64)
 	})
 }
 
 // Q writes quoted json-safe s to w.
 func (w *QWriter) Q(s string) {
-	ww := w.w
-	ww.Write(strQuote)
-	writeJSONString(w.w, s)
-	ww.Write(strQuote)
+	w.Write(strQuote)
+	writeJSONString(w, s)
+	w.Write(strQuote)
 }
 
 var strQuote = []byte(`"`)
@@ -115,7 +133,7 @@ func (w *QWriter) QZ(z []byte) {
 //
 // Unlike Q it doesn't qoute resulting s.
 func (w *QWriter) J(s string) {
-	writeJSONString(w.w, s)
+	writeJSONString(w, s)
 }
 
 // JZ writes json-safe z to w.
@@ -127,12 +145,12 @@ func (w *QWriter) JZ(z []byte) {
 
 // V writes v to w.
 func (w *QWriter) V(v interface{}) {
-	fmt.Fprintf(w.w, "%v", v)
+	fmt.Fprintf(w, "%v", v)
 }
 
 // U writes url-encoded s to w.
 func (w *QWriter) U(s string) {
-	writeQuick(w.w, func(dst []byte) []byte {
+	w.writeQuick(func(dst []byte) []byte {
 		return appendURLEncode(dst, s)
 	})
 }
@@ -142,8 +160,11 @@ func (w *QWriter) UZ(z []byte) {
 	w.U(unsafeBytesToStr(z))
 }
 
-func writeQuick(w io.Writer, f func(dst []byte) []byte) {
-	bb, ok := w.(*ByteBuffer)
+func (w *QWriter) writeQuick(f func(dst []byte) []byte) {
+	if w.err != nil {
+		return
+	}
+	bb, ok := w.w.(*ByteBuffer)
 	if !ok {
 		bb = AcquireByteBuffer()
 	}

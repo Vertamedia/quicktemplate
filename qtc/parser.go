@@ -41,11 +41,11 @@ func (p *parser) parseTemplate() error {
 		filepath.Base(s.filePath))
 	p.Printf("package %s\n", p.packageName)
 	p.Printf(`import (
-	qtio422016 "io"
+	qtio%s "io"
 
-	qt422016 "github.com/valyala/quicktemplate"
+	qt%s "github.com/valyala/quicktemplate"
 )
-`)
+`, mangleSuffix, mangleSuffix)
 	for s.Next() {
 		t := s.Token()
 		switch t.ID {
@@ -126,10 +126,10 @@ func (p *parser) emitImportsUse() {
 		return
 	}
 	p.Printf(`var (
-	_ = qtio422016.Copy
-	_ = qt422016.AcquireByteBuffer
+	_ = qtio%s.Copy
+	_ = qt%s.AcquireByteBuffer
 )
-`)
+`, mangleSuffix, mangleSuffix)
 	p.importsUseEmitted = true
 }
 
@@ -458,10 +458,10 @@ func (p *parser) tryParseCommonTags(tagBytes []byte) (bool, error) {
 			tagNameStr = tagNameStr[:len(tagNameStr)-1]
 		}
 		if tagNameStr == "f" && prec >= 0 {
-			p.Printf("qw422016.N().FPrec(%s, %d)", t.Value, prec)
+			p.Printf("qw%s.N().FPrec(%s, %d)", mangleSuffix, t.Value, prec)
 		} else {
 			tagNameStr = strings.ToUpper(tagNameStr)
-			p.Printf("qw422016.%s%s(%s)", filter, tagNameStr, t.Value)
+			p.Printf("qw%s.%s%s(%s)", mangleSuffix, filter, tagNameStr, t.Value)
 		}
 	case "=":
 		t, err := expectTagContents(s)
@@ -472,7 +472,7 @@ func (p *parser) tryParseCommonTags(tagBytes []byte) (bool, error) {
 		if err != nil {
 			return false, fmt.Errorf("error at %s: %s", s.Context(), err)
 		}
-		p.Printf("%s", f.CallStream("qw422016"))
+		p.Printf("%s", f.CallStream("qw"+mangleSuffix))
 	case "return":
 		if err := p.skipAfterTag(tagNameStr); err != nil {
 			return false, err
@@ -611,8 +611,8 @@ func (p *parser) parseInterface() error {
 			return fmt.Errorf("when when parsing %q at %s: %s", methodStr, s.Context(), err)
 		}
 		p.Printf("%s string", methodStr)
-		p.Printf("%s", f.DefStream("qw422016"))
-		p.Printf("%s", f.DefWrite("qq422016"))
+		p.Printf("%s", f.DefStream("qw"+mangleSuffix))
+		p.Printf("%s", f.DefWrite("qq"+mangleSuffix))
 	}
 	p.prefix = ""
 	p.Printf("}")
@@ -662,17 +662,17 @@ func (p *parser) emitText(text []byte) {
 	for len(text) > 0 {
 		n := bytes.IndexByte(text, '`')
 		if n < 0 {
-			p.Printf("qw422016.N().S(`%s`)", text)
+			p.Printf("qw%s.N().S(`%s`)", mangleSuffix, text)
 			return
 		}
-		p.Printf("qw422016.N().S(`%s`)", text[:n])
-		p.Printf("qw422016.N().S(\"`\")")
+		p.Printf("qw%s.N().S(`%s`)", mangleSuffix, text[:n])
+		p.Printf("qw%s.N().S(\"`\")", mangleSuffix)
 		text = text[n+1:]
 	}
 }
 
 func (p *parser) emitFuncStart(f *funcType) {
-	p.Printf("func %s {", f.DefStream("qw422016"))
+	p.Printf("func %s {", f.DefStream("qw"+mangleSuffix))
 	p.prefix = "\t"
 }
 
@@ -680,21 +680,21 @@ func (p *parser) emitFuncEnd(f *funcType) {
 	p.prefix = ""
 	p.Printf("}\n")
 
-	p.Printf("func %s {", f.DefWrite("qq422016"))
+	p.Printf("func %s {", f.DefWrite("qq"+mangleSuffix))
 	p.prefix = "\t"
-	p.Printf("qw422016 := qt422016.AcquireWriter(qq422016)")
-	p.Printf("%s", f.CallStream("qw422016"))
-	p.Printf("qt422016.ReleaseWriter(qw422016)")
+	p.Printf("qw%s := qt%s.AcquireWriter(qq%s)", mangleSuffix, mangleSuffix, mangleSuffix)
+	p.Printf("%s", f.CallStream("qw"+mangleSuffix))
+	p.Printf("qt%s.ReleaseWriter(qw%s)", mangleSuffix, mangleSuffix)
 	p.prefix = ""
 	p.Printf("}\n")
 
 	p.Printf("func %s {", f.DefString())
 	p.prefix = "\t"
-	p.Printf("qb422016 := qt422016.AcquireByteBuffer()")
-	p.Printf("%s", f.CallWrite("qb422016"))
-	p.Printf("qs422016 := string(qb422016.B)")
-	p.Printf("qt422016.ReleaseByteBuffer(qb422016)")
-	p.Printf("return qs422016")
+	p.Printf("qb%s := qt%s.AcquireByteBuffer()", mangleSuffix, mangleSuffix)
+	p.Printf("%s", f.CallWrite("qb"+mangleSuffix))
+	p.Printf("qs%s := string(qb%s.B)", mangleSuffix, mangleSuffix)
+	p.Printf("qt%s.ReleaseByteBuffer(qb%s)", mangleSuffix, mangleSuffix)
+	p.Printf("return qs%s", mangleSuffix)
 	p.prefix = ""
 	p.Printf("}\n")
 }
@@ -712,7 +712,14 @@ func (p *parser) Printf(format string, args ...interface{}) {
 }
 
 func skipTagContents(s *scanner) error {
-	_, err := expectTagContents(s)
+	tagName := string(s.Token().Value)
+	t, err := expectTagContents(s)
+	if err != nil {
+		return err
+	}
+	if len(t.Value) > 0 {
+		return fmt.Errorf("unexpected extra value after %s: %q at %s", tagName, t.Value, s.Context())
+	}
 	return err
 }
 

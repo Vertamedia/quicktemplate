@@ -10,6 +10,40 @@ import (
 	"github.com/valyala/quicktemplate"
 )
 
+func TestParseUnexpectedValueAfterTag(t *testing.T) {
+	// endfunc
+	testParseSuccess(t, "{% func a() %}{% endfunc %}")
+	testParseFailure(t, "{% func a() %}{% endfunc foo bar %}")
+
+	// endfor
+	testParseSuccess(t, "{% func a() %}{% for %}{% endfor %}{% endfunc %}")
+	testParseFailure(t, "{% func a() %}{% for %}{% endfor foo bar %}{% endfunc %}")
+
+	// endif
+	testParseSuccess(t, "{% func a() %}{% if true %}{% endif %}{% endfunc %}")
+	testParseFailure(t, "{% func a() %}{% if true %}{% endif foo bar %}{% endfunc %}")
+
+	// endswitch
+	testParseSuccess(t, "{% func a() %}{% switch %}{% case true %}{% endswitch %}{% endfunc %}")
+	testParseFailure(t, "{% func a() %}{% switch %}{% case true %}{% endswitch foobar %}{% endfunc %}")
+
+	// else
+	testParseSuccess(t, "{% func a() %}{% if true %}{% else %}{% endif %}{% endfunc %}")
+	testParseFailure(t, "{% func a() %}{% if true %}{% else foo bar %}{% endif %}{% endfunc %}")
+
+	// return
+	testParseSuccess(t, "{% func a() %}{% return %}{% endfunc %}")
+	testParseFailure(t, "{% func a() %}{% return foobar %}{% endfunc %}")
+
+	// break
+	testParseSuccess(t, "{% func a() %}{% for %}{% break %}{% endfor %}{% endfunc %}")
+	testParseFailure(t, "{% func a() %}{% for %}{% break foobar %}{% endfor %}{% endfunc %}")
+
+	// default
+	testParseSuccess(t, "{% func a() %}{% switch %}{% default %}{% endswitch %}{% endfunc %}")
+	testParseFailure(t, "{% func a() %}{% switch %}{% default foobar %}{% endswitch %}{% endfunc %}")
+}
+
 func TestParseFPrecFailure(t *testing.T) {
 	// negative precision
 	testParseFailure(t, "{% func a()%}{%f.-1 1.2 %}{% endfunc %}")
@@ -293,6 +327,9 @@ func TestParseFailure(t *testing.T) {
 	// empty if condition
 	testParseFailure(t, "{% func a() %}{% if    %}aaaa{% endif %}{% endfunc %}")
 
+	// else with content
+	testParseFailure(t, "{% func a() %}{% if 3 == 4%}aaaa{% else if 3 ==  5 %}bug{% endif %}{% endfunc %}")
+
 	// missing endif
 	testParseFailure(t, "{%func a() %}{%if foo %}aaa{% endfunc %}")
 
@@ -402,9 +439,12 @@ func TestParserSuccess(t *testing.T) {
 	// break inside for loop
 	testParseSuccess(t, `{%func f()%}{%for%}
 		{% if a() %}
-			{% break %}
-		{% else %}
-			{% return %}
+			{% break
+  	 %}
+		{% 	
+else   
+%}
+			{% return   %}
 		{% endif %}
 	{%endfor%}{%endfunc%}`)
 
